@@ -1,9 +1,9 @@
 
-/* Make crest slightly fainter without changing layout */
+/* Slightly fainter crest */
 .turbo{opacity:.88;}
-/* Present button: looks active but inert; others disabled as usual */
+/* Present button looks active but inert; others disabled */
 #tense-buttons .tense-button.active[aria-disabled="true"]{pointer-events:none;opacity:1;}
-/* Optional: rounder inputs + ok/bad (only if your base CSS uses these classes) */
+/* Softer inputs + ok/bad tint if base CSS supports these classes */
 .answer{border-radius:16px;}
 .answer.ok{background:#e6f7ea;border-color:#22a34a;}
 .answer.bad{background:#fdecec;border-color:#dc2626;}

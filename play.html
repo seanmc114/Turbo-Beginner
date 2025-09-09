@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TURBO — Beginner (Present)</title>
+  <title>TURBO — Beginner (Play)</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="style-override.css" />
 </head>
@@ -17,9 +17,14 @@
       <button class="tense-button" data-tense="Future">Future</button>
     </div>
 
-    <div id="level-list"></div>
+    <div id="game">
+      <div id="timer">Time: 0s</div>
+      <div id="questions"></div>
+      <button id="submit" type="button">Check Answers</button>
+      <div id="results"></div>
+    </div>
   </div>
 
-  <script src="menu.js"></script>
+  <script src="play.js"></script>
 </body>
 </html>
