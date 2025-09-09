@@ -3,12 +3,15 @@
   const $ = (s)=>document.querySelector(s);
   const $$ = (s)=>Array.from(document.querySelectorAll(s));
 
-  // ===== CONFIG: level targets & rules (same as full game) =====
+  // ===== CONFIG =====
   const LEVELS = 10;
   const UNLOCK_TARGETS = [null, null, 125,115,105,95,85,75,65,55,45]; // L2=125 then -10
   const NUM_QUESTIONS = 10;
-  const PENALTY_PER_MISS = 30; // +30s per incorrect/blank
+  const PENALTY_PER_MISS = 30;
   const ACTIVE_TENSE = 'Present'; // locked for now
+
+  // Fresh storage namespace so L1 unlocked only on first run
+  const STORAGE_PREFIX = 'tb_begin_classic_v3_';
 
   // ===== Data: Present only, ser & tener =====
   const SUBJECTS = [
@@ -32,7 +35,7 @@
   };
 
   // ===== Storage & helpers =====
-  const LS_KEY = (lvl)=>`tb_begin_${ACTIVE_TENSE}_L${lvl}_best`;
+  const LS_KEY = (lvl)=>`${STORAGE_PREFIX}${ACTIVE_TENSE}_L${lvl}_best`;
   const getBest = (lvl)=>{
     const v = localStorage.getItem(LS_KEY(lvl));
     return v? parseInt(v,10): null;
@@ -41,23 +44,15 @@
     const prev = getBest(lvl);
     if (prev==null || seconds<prev) localStorage.setItem(LS_KEY(lvl), String(seconds));
   };
-  const levelPassed = (lvl)=>{
-    const best = getBest(lvl);
-    if (best==null) return false;
-    if (lvl===LEVELS) return true; // last level: any best counts as passed
-    const req = UNLOCK_TARGETS[lvl+1];
-    return best <= req;
-  };
   const isUnlocked = (lvl)=>{
     if (lvl===1) return true;
-    const prevBest = getBest(lvl-1);
     const req = UNLOCK_TARGETS[lvl];
+    const prevBest = getBest(lvl-1);
     return prevBest!=null && prevBest<=req;
   };
   const fmt = (s)=>`${s}s`;
   const norm = (s)=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
 
-  // ===== UI: lock to Present only =====
   function lockToPresentOnly(){
     $$('#tense-buttons .tense-btn').forEach(btn=>{
       const on = btn.dataset.tense==='Present';
@@ -67,40 +62,27 @@
     });
   }
 
-  // ===== Levels list (vertical) =====
+  // ===== Levels list (minimal labels) =====
   function renderLevels(){
     const wrap = $('#level-list');
     wrap.innerHTML = '';
     for (let lvl=1; lvl<=LEVELS; lvl++){
+      const unlocked = isUnlocked(lvl);
       const btn = document.createElement('button');
-      btn.className = 'level-button';
-      const best = getBest(lvl);
-      const locked = !isUnlocked(lvl);
-      const passed = levelPassed(lvl);
-      if (locked) btn.classList.add('locked');
-      if (passed) btn.classList.add('passed');
-
+      btn.className = 'level-button ' + (unlocked ? 'unlocked' : 'locked');
       const label = document.createElement('span');
       label.className = 'label';
-      label.textContent = `Level ${lvl}`;
-
-      const meta = document.createElement('span');
-      meta.className = 'meta';
-      meta.innerHTML = [
-        best!=null ? `<span class="best">Best: ${fmt(best)}</span>` : '',
-        (lvl<LEVELS) ? `Target for L${lvl+1}: ${fmt(UNLOCK_TARGETS[lvl+1])}` : ''
-      ].filter(Boolean).join(' • ');
-
+      label.textContent = unlocked ? `Level ${lvl}` : '🔒';
       btn.appendChild(label);
-      btn.appendChild(meta);
-
-      btn.disabled = locked;
-      btn.addEventListener('click', ()=> startGame(lvl));
+      btn.disabled = !unlocked;
+      if (unlocked){
+        btn.addEventListener('click', ()=> startGame(lvl));
+      }
       wrap.appendChild(btn);
     }
   }
 
-  // ===== Build 10 questions from ser/tener (Present) =====
+  // ===== Question generation =====
   function buildQuestions(){
     const verbs = DATA[ACTIVE_TENSE].verbs;
     const combos = [];
@@ -110,7 +92,7 @@
       }
     }
     const items=[];
-    for (let i=0;i<10;i++){
+    for (let i=0;i<NUM_QUESTIONS;i++){
       const pick = combos[Math.floor(Math.random()*combos.length)];
       const {verb, subj} = pick;
       const english = `${subj.en} ${verb.enBase[subj.person]}`;
@@ -172,6 +154,9 @@
       const opt = norm(payload[i].optional);
       const ok = (user===c) || (user===opt);
       if (ok) correct++; else misses++;
+      // mark inputs green/red after completion
+      inp.classList.remove('ok','bad');
+      inp.classList.add(ok ? 'ok' : 'bad');
       details.push({
         n:i+1, prompt: payload[i].english,
         given: inp.value || '—',
@@ -188,9 +173,10 @@
 
     const head = `<div class="score">You got ${result.correct}/${result.total} correct. Time ${fmt(rawSeconds)} + penalties ${fmt(penalty)} = <strong>${fmt(finalTime)}</strong>.</div>`;
 
+    // Feedback cards with colour
     let fb = '<div class="feedback">';
     result.details.forEach(d=>{
-      fb += `<div class="${d.ok?'correct':'incorrect'}">
+      fb += `<div class="item ${d.ok?'correct':'incorrect'}">
         <strong>${d.n}.</strong> ${d.prompt} → <code>${d.given}</code>
         ${d.ok ? ' ✓' : ` ✗ &nbsp; <em>Answer:</em> ${d.answer}`}
       </div>`;
@@ -209,15 +195,24 @@
       }
     }
 
-    const actions = `<p><a href="./">Try Again</a> &nbsp; <a href="#" id="backToMenu">Back to Menu</a></p>`;
+    // Action buttons
+    const actions = `<div class="actions">
+      <button id="tryAgainBtn" class="btn">TRY AGAIN</button>
+      <button id="backToLevelsBtn" class="btn">BACK TO LEVELS</button>
+    </div>`;
 
     $('#results').innerHTML = head + unlockNote + fb + actions;
-    renderLevels();
-    $('#backToMenu')?.addEventListener('click', (e)=>{
+
+    // Wire action buttons
+    $('#tryAgainBtn')?.addEventListener('click', ()=> location.reload());
+    $('#backToLevelsBtn')?.addEventListener('click', (e)=>{
       e.preventDefault();
       $('#game').style.display='none';
       window.scrollTo({top:0, behavior:'smooth'});
     });
+
+    // Refresh level buttons to reflect any unlock
+    renderLevels();
   }
 
   function bindSubmit(){
