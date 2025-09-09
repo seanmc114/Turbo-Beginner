@@ -1,0 +1,12 @@
+
+/* Make the crest/title slightly fainter without changing layout */
+.turbo{opacity:.88;}
+
+/* Keep Present button looking ACTIVE but non-clickable (others remain disabled/grey) */
+#tense-buttons .tense-button.active[aria-disabled="true"]{pointer-events:none;opacity:1;}
+
+/* Optional: rounder inputs *if* your base CSS supports .answer */
+.answer{border-radius:16px;}
+/* Optional green/red feedback on inputs if your base CSS defines .ok/.bad */
+.answer.ok{background:#e6f7ea;border-color:#22a34a;}
+.answer.bad{background:#fdecec;border-color:#dc2626;}

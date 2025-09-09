@@ -3,29 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Turbo — Beginner</title>
+  <title>TURBO — Beginner (Present)</title>
+  <!-- Use your original Turbo/style.css unchanged -->
   <link rel="stylesheet" href="style.css" />
+  <!-- Small, safe overrides per your requests -->
+  <link rel="stylesheet" href="style-override.css" />
 </head>
 <body>
-  <div class="wrap">
-    <h1 class="title">TURBO</h1>
+  <div class="container">
+    <h1><span class="turbo">TURBO</span></h1>
 
-    <!-- Keep header as original; JS locks to Present -->
-    <div id="tense-buttons" class="tense-row">
-      <button class="tense-btn active" data-tense="Present">Present</button>
-      <button class="tense-btn" data-tense="Past">Past</button>
-      <button class="tense-btn" data-tense="Future">Future</button>
+    <div id="tense-buttons" style="margin-bottom: 20px;">
+      <button class="tense-button active" data-tense="Present">Present</button>
+      <button class="tense-button" data-tense="Past">Past</button>
+      <button class="tense-button" data-tense="Future">Future</button>
     </div>
 
-    <!-- Vertical Level List -->
-    <div id="level-list" class="level-col"></div>
+    <div id="level-list"></div>
 
-    <!-- Game Area -->
-    <div id="game" class="game" style="display:none;">
-      <div id="timer" class="timer">Time: 0s</div>
-      <div id="questions" class="questions"></div>
-      <button id="submit" class="btn primary" type="button">Check Answers</button>
-      <div id="results" class="results"></div>
+    <div id="game" style="display: none;">
+      <div id="timer">Time: 0s</div>
+      <div id="questions"></div>
+      <button id="submit" type="button">Check Answers</button>
+      <div id="results"></div>
     </div>
   </div>
 
