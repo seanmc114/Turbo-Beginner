@@ -1,15 +1,13 @@
 
-# Beginner Turbo — EXACT look (fixes pack)
+# Beginner Turbo — EXACT look + random interrogative/negative
 
-This keeps your original Turbo look. It fixes:
-- Level 1 not responding (robust delegated click handler + explicit button type).
-- Present button styling: stays ACTIVE but non-clickable, matching your theme.
-- Crest softened slightly.
+This keeps your original Turbo layout/styles. Only logic changed:
+- Each question randomly becomes **affirmative**, **negative**, or **interrogative**.
+- Spanish answers accepted:
+  - Affirmative: `conjugation` or `pronoun + conjugation` (e.g., `soy` or `yo soy`)
+  - Negative: `no + conjugation` or `pronoun + no + conjugation` (e.g., `no soy`, `yo no soy`)
+  - Interrogative: same as affirmative (punctuation not required)
+- Robust Level 1 click and Present button styling preserved.
 
-## Files
-- `index.html` — same structure, plus a tiny `style-override.css` link after your original `style.css`.
-- `style-override.css` — only the three overrides requested.
-- `script.js` — same logic but with reliable init + level click delegation.
-
-## How to use
-Upload these three files alongside your existing `style.css` into your beginner repo. Do not change your original `style.css`.
+**How to use**
+Upload `index.html`, `script.js`, and `style-override.css` alongside your original `style.css` in your beginner repo.
