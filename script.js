@@ -1,4 +1,5 @@
 
+// Classic beginner Turbo — Present only (ser & tener) with level locks
 (function(){
   const $ = (s)=>document.querySelector(s);
   const $$ = (s)=>Array.from(document.querySelectorAll(s));
@@ -8,10 +9,28 @@
   const UNLOCK_TARGETS = [null, null, 125,115,105,95,85,75,65,55,45]; // L2=125 then -10
   const NUM_QUESTIONS = 10;
   const PENALTY_PER_MISS = 30;
-  const ACTIVE_TENSE = 'Present'; // locked for now
+  const ACTIVE_TENSE = 'Present';
 
-  // Fresh storage namespace so L1 unlocked only on first run
-  const STORAGE_PREFIX = 'tb_begin_classic_v3_';
+  // Fresh storage namespace so Level 1 is the only unlocked on first run
+  const STORAGE_PREFIX = 'tb_begin_classic_working_';
+  const LS_KEY = (lvl)=>`${STORAGE_PREFIX}${ACTIVE_TENSE}_L${lvl}_best`;
+
+  const getBest = (lvl)=>{
+    const v = localStorage.getItem(LS_KEY(lvl));
+    return v? parseInt(v,10): null;
+  };
+  const setBest = (lvl, seconds)=>{
+    const prev = getBest(lvl);
+    if (prev==null || seconds<prev) localStorage.setItem(LS_KEY(lvl), String(seconds));
+  };
+  const isUnlocked = (lvl)=>{
+    if (lvl===1) return true;
+    const req = UNLOCK_TARGETS[lvl];
+    const prevBest = getBest(lvl-1);
+    return prevBest!=null && prevBest<=req;
+  };
+  const fmt = (s)=>`${s}s`;
+  const norm = (s)=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
 
   // ===== Data: Present only, ser & tener =====
   const SUBJECTS = [
@@ -34,25 +53,7 @@
     }
   };
 
-  // ===== Storage & helpers =====
-  const LS_KEY = (lvl)=>`${STORAGE_PREFIX}${ACTIVE_TENSE}_L${lvl}_best`;
-  const getBest = (lvl)=>{
-    const v = localStorage.getItem(LS_KEY(lvl));
-    return v? parseInt(v,10): null;
-  };
-  const setBest = (lvl, seconds)=>{
-    const prev = getBest(lvl);
-    if (prev==null || seconds<prev) localStorage.setItem(LS_KEY(lvl), String(seconds));
-  };
-  const isUnlocked = (lvl)=>{
-    if (lvl===1) return true;
-    const req = UNLOCK_TARGETS[lvl];
-    const prevBest = getBest(lvl-1);
-    return prevBest!=null && prevBest<=req;
-  };
-  const fmt = (s)=>`${s}s`;
-  const norm = (s)=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
-
+  // ===== UI helpers =====
   function lockToPresentOnly(){
     $$('#tense-buttons .tense-btn').forEach(btn=>{
       const on = btn.dataset.tense==='Present';
@@ -62,14 +63,14 @@
     });
   }
 
-  // ===== Levels list (minimal labels) =====
   function renderLevels(){
     const wrap = $('#level-list');
-    wrap.innerHTML = '';
+    wrap.innerHTML='';
     for (let lvl=1; lvl<=LEVELS; lvl++){
       const unlocked = isUnlocked(lvl);
       const btn = document.createElement('button');
       btn.className = 'level-button ' + (unlocked ? 'unlocked' : 'locked');
+      btn.type = 'button';
       const label = document.createElement('span');
       label.className = 'label';
       label.textContent = unlocked ? `Level ${lvl}` : '🔒';
@@ -82,7 +83,7 @@
     }
   }
 
-  // ===== Question generation =====
+  // ===== Questions =====
   function buildQuestions(){
     const verbs = DATA[ACTIVE_TENSE].verbs;
     const combos = [];
@@ -104,7 +105,7 @@
   }
 
   // ===== Timer =====
-  let t0=0, tick=null, currentLevel=null;
+  let t0=0, tick=null, currentLevel=null, lastPayload=null;
   function startTimer(){
     t0 = Date.now();
     tick = setInterval(()=>{
@@ -138,29 +139,28 @@
     $('#results').innerHTML='';
     $('#game').style.display='block';
     const qs = buildQuestions();
-    $('#game').dataset.payload = JSON.stringify(qs);
+    lastPayload = qs;
     renderQuestions(qs);
     startTimer();
     window.scrollTo({top:0, behavior:'smooth'});
   }
 
   function grade(){
-    const payload = JSON.parse($('#game').dataset.payload || '[]');
     const inputs = $$('#questions .answer');
     let correct=0, misses=0, details=[];
     inputs.forEach((inp, i)=>{
       const user = norm(inp.value);
-      const c = norm(payload[i].correct);
-      const opt = norm(payload[i].optional);
+      const c = norm(lastPayload[i].correct);
+      const opt = norm(lastPayload[i].optional);
       const ok = (user===c) || (user===opt);
       if (ok) correct++; else misses++;
-      // mark inputs green/red after completion
+      // highlight the input
       inp.classList.remove('ok','bad');
       inp.classList.add(ok ? 'ok' : 'bad');
       details.push({
-        n:i+1, prompt: payload[i].english,
+        n:i+1, prompt: lastPayload[i].english,
         given: inp.value || '—',
-        answer: payload[i].correct + ' (or: ' + payload[i].optional + ')',
+        answer: lastPayload[i].correct + ' (or: ' + lastPayload[i].optional + ')',
         ok
       });
     });
@@ -173,10 +173,10 @@
 
     const head = `<div class="score">You got ${result.correct}/${result.total} correct. Time ${fmt(rawSeconds)} + penalties ${fmt(penalty)} = <strong>${fmt(finalTime)}</strong>.</div>`;
 
-    // Feedback cards with colour
+    // Simple, original-style feedback list (no big cards)
     let fb = '<div class="feedback">';
     result.details.forEach(d=>{
-      fb += `<div class="item ${d.ok?'correct':'incorrect'}">
+      fb += `<div class="line ${d.ok?'correct':'incorrect'}">
         <strong>${d.n}.</strong> ${d.prompt} → <code>${d.given}</code>
         ${d.ok ? ' ✓' : ` ✗ &nbsp; <em>Answer:</em> ${d.answer}`}
       </div>`;
@@ -195,23 +195,30 @@
       }
     }
 
-    // Action buttons
+    // Action buttons: TRY AGAIN (restart same level) & BACK TO LEVELS
     const actions = `<div class="actions">
-      <button id="tryAgainBtn" class="btn">TRY AGAIN</button>
-      <button id="backToLevelsBtn" class="btn">BACK TO LEVELS</button>
+      <button id="tryAgainBtn" class="btn" type="button">TRY AGAIN</button>
+      <button id="backToLevelsBtn" class="btn" type="button">BACK TO LEVELS</button>
     </div>`;
 
     $('#results').innerHTML = head + unlockNote + fb + actions;
 
-    // Wire action buttons
-    $('#tryAgainBtn')?.addEventListener('click', ()=> location.reload());
-    $('#backToLevelsBtn')?.addEventListener('click', (e)=>{
-      e.preventDefault();
-      $('#game').style.display='none';
+    // Wire actions
+    $('#tryAgainBtn')?.addEventListener('click', ()=>{
+      $('#results').innerHTML='';
+      const qs = buildQuestions(); // new set but same level
+      lastPayload = qs;
+      renderQuestions(qs);
+      startTimer();
       window.scrollTo({top:0, behavior:'smooth'});
     });
+    $('#backToLevelsBtn')?.addEventListener('click', ()=>{
+      $('#game').style.display='none';
+      window.scrollTo({top:0, behavior:'smooth'});
+      renderLevels(); // reflect unlocks
+    });
 
-    // Refresh level buttons to reflect any unlock
+    // Reflect unlocks immediately
     renderLevels();
   }
 
