@@ -8,24 +8,24 @@
 </head>
 <body>
   <div class="container">
-    <h1><span class="turbo">TURBO</span> <span style="font-size:0.6em;opacity:.7;">Beginner • Present</span></h1>
+    <h1><span class="turbo">TURBO</span> <span class="subtitle">Beginner • Present</span></h1>
 
-    <!-- Tense Buttons (kept for same design; Past/Future disabled by JS) -->
-    <div id="tense-buttons" style="margin-bottom: 20px;">
+    <!-- Keep the same header controls; JS hides Past/Future -->
+    <div id="tense-buttons" class="tense-buttons">
       <button class="tense-button active" data-tense="Present">Present</button>
       <button class="tense-button" data-tense="Past">Past</button>
       <button class="tense-button" data-tense="Future">Future</button>
     </div>
 
-    <!-- Level Selection Section -->
-    <div id="level-list"></div>
+    <!-- Level Selection -->
+    <div id="level-list" class="level-list"></div>
 
     <!-- Game Section -->
-    <div id="game" style="display: none;">
-      <div id="timer">Time: 0s</div>
-      <div id="questions"></div>
-      <button id="submit">Check Answers</button>
-      <div id="results"></div>
+    <div id="game" class="game" style="display: none;">
+      <div id="timer" class="timer">Time: 0s</div>
+      <div id="questions" class="questions"></div>
+      <button id="submit" class="primary">Check Answers</button>
+      <div id="results" class="results"></div>
     </div>
   </div>
 
